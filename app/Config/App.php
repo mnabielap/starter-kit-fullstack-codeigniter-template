@@ -199,4 +199,13 @@ class App extends BaseConfig
      * @see http://www.w3.org/TR/CSP/
      */
     public bool $CSPEnabled = false;
+
+        public function __construct()
+    {
+        parent::__construct();
+
+        if (getenv('app.baseURL')) {
+            $this->baseURL = getenv('app.baseURL');
+        }
+    }
 }

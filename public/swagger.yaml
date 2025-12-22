@@ -1,0 +1,463 @@
+openapi: 3.0.0
+info:
+  title: CodeIgniter 4 Fullstack Starter Kit API
+  description: API documentation for the Starter Kit Fullstack CodeIgniter Template. Features JWT Authentication, User Management, and RBAC.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+  - url: http://localhost:5005/api/v1
+    description: Docker Container Server
+  - url: http://localhost/starter-kit-fullstack-codeigniter-template/public/api/v1
+    description: XAMPP / Apache
+
+# ---------------------------------------------------------------------------
+# SECURITY SCHEMES
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT Access Token here.
+
+  schemas:
+    # --- User Schema ---
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "user"
+        is_email_verified:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # --- Token Schema ---
+    AuthTokens:
+      type: object
+      properties:
+        access:
+          type: object
+          properties:
+            token:
+              type: string
+            expires:
+              type: string
+              format: date-time
+        refresh:
+          type: object
+          properties:
+            token:
+              type: string
+            expires:
+              type: string
+              format: date-time
+
+    # --- Auth Response ---
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        tokens:
+          $ref: '#/components/schemas/AuthTokens'
+
+    # --- Error Schema ---
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Validation Error"
+        errors:
+          type: object
+          additionalProperties:
+            type: string
+
+# ---------------------------------------------------------------------------
+# PATHS
+# ---------------------------------------------------------------------------
+paths:
+  # ============================
+  # AUTHENTICATION ROUTES
+  # ============================
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                  description: Must contain at least 1 letter and 1 number.
+      responses:
+        '201':
+          description: Registration Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 201 }
+                  message: { type: string, example: "Success" }
+                  data: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Validation Error
+
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        '200':
+          description: Login Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  message: { type: string, example: "Success" }
+                  data: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Invalid Credentials
+
+  /auth/logout:
+    post:
+      summary: Logout
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '204':
+          description: Logged out successfully
+
+  /auth/refresh-tokens:
+    post:
+      summary: Refresh Access Token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data: { $ref: '#/components/schemas/AuthTokens' }
+
+  /auth/forgot-password:
+    post:
+      summary: Request Password Reset
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '204':
+          description: Reset link sent (if email exists)
+
+  /auth/reset-password:
+    post:
+      summary: Reset Password
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          description: Token received in email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  minLength: 8
+                  description: New password
+      responses:
+        '204':
+          description: Password reset successful
+
+  /auth/send-verification-email:
+    post:
+      summary: Send Email Verification Link
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Verification email sent
+        '401':
+          description: Unauthorized
+
+  /auth/verify-email:
+    post:
+      summary: Verify Email Address
+      tags: [Auth]
+      parameters:
+        - in: query
+          name: token
+          schema:
+            type: string
+          description: Token received in email
+      responses:
+        '204':
+          description: Email verified successfully
+
+  # ============================
+  # USER MANAGEMENT ROUTES
+  # ============================
+  /users:
+    post:
+      summary: Create a new User (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, role]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [user, admin]
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '403':
+          description: Forbidden (Requires Admin)
+
+    get:
+      summary: Get All Users (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            default: "created_at:desc"
+            example: "name:asc"
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by name (fuzzy)
+        - in: query
+          name: role
+          schema:
+            type: string
+            enum: [user, admin]
+          description: Filter by exact role
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      page: { type: integer }
+                      limit: { type: integer }
+                      totalPages: { type: integer }
+                      totalResults: { type: integer }
+
+  /users/{userId}:
+    get:
+      summary: Get Specific User
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '403':
+          description: Forbidden (Can only access own data or be Admin)
+        '404':
+          description: User not found
+
+    patch:
+      summary: Update User
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [user, admin]
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/User' }
+        '403':
+          description: Forbidden
+
+    delete:
+      summary: Delete User
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+        '403':
+          description: Forbidden

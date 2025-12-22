@@ -6,6 +6,7 @@ use CodeIgniter\Controller;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use App\Entities\User;
 
 /**
  * BaseController provides a convenient place for loading components
@@ -41,5 +42,18 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
+    }
+
+        /**
+     * Helper to retrieve the Authenticated User injected by JwtAuth Filter.
+     * This solves the IDE "Undefined property" error by type-hinting the return value.
+     */
+    protected function getAuthUser(): ?User
+    {
+        // We use a docblock here to tell the IDE that $request has the 'user' property
+        /** @var \CodeIgniter\HTTP\IncomingRequest&\stdClass $request */
+        $request = $this->request;
+
+        return $request->user ?? null;
     }
 }
