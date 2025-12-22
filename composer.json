@@ -1,0 +1,38 @@
+{
+    "name": "starter-kit/fullstack-codeigniter-template",
+    "description": "Fullstack Starter Kit with CodeIgniter 4 (Service Layer & Dual Interface)",
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": "^8.1",
+        "codeigniter4/framework": "^4.5",
+        "firebase/php-jwt": "^6.10"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "mikey179/vfsstream": "^1.6",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Config\\": "app/Config/"
+        },
+        "exclude-from-classmap": [
+            "**/Database/Migrations/**"
+        ]
+    },
+    "scripts": {
+        "post-update-cmd": [
+            "@composer dump-autoload"
+        ]
+    },
+    "support": {
+        "repository": "https://github.com/codeigniter4/appstarter"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
+}
