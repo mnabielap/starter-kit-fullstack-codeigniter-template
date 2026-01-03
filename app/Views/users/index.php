@@ -17,7 +17,16 @@
             <div class="card-body border border-dashed border-end-0 border-start-0">
                 <div class="row g-3">
                     <div class="col-xxl-5 col-sm-6">
-                        <input type="text" class="form-control" id="searchName" placeholder="Search by name, email, or role...">
+                        <div class="input-group">
+                            <!-- Added scope selector to match backend/test requirements -->
+                            <select class="form-select" id="searchScope" style="max-width: 130px;">
+                                <option value="all">All</option>
+                                <option value="name">Name</option>
+                                <option value="email">Email</option>
+                                <option value="id">ID</option>
+                            </select>
+                            <input type="text" class="form-control" id="searchName" placeholder="Search...">
+                        </div>
                     </div>
                     <div class="col-xxl-2 col-sm-4">
                         <select class="form-select" id="filterRole">
@@ -31,6 +40,7 @@
                             <option value="created_at:desc">Newest</option>
                             <option value="created_at:asc">Oldest</option>
                             <option value="name:asc">Name (A-Z)</option>
+                            <option value="role:asc">Role (A-Z)</option>
                         </select>
                     </div>
                     <div class="col-xxl-1 col-sm-4">
@@ -106,23 +116,31 @@
 
     async function loadUsers() {
         const search = document.getElementById('searchName').value;
+        const scope = document.getElementById('searchScope').value;
         const role = document.getElementById('filterRole').value;
         const sortBy = document.getElementById('sortBy').value;
 
         const params = new URLSearchParams({
             page: currentPage,
             limit: limit,
-            sortBy: sortBy,
-            search: search,
-            role: role
+            sortBy: sortBy
         });
+
+        if (search) {
+            params.append('search', search);
+            params.append('scope', scope);
+        }
+        if (role) {
+            params.append('role', role);
+        }
 
         try {
             const response = await API.fetch(`/users?${params.toString()}`);
             const json = await response.json();
 
             if (response.ok) {
-                const data = json.data;
+                // Backend returns results at root level now
+                const data = json; 
                 const tbody = document.getElementById('usersTableBody');
                 tbody.innerHTML = '';
 
@@ -140,7 +158,7 @@
                 document.getElementById('prevBtn').classList.toggle('disabled', data.page <= 1);
                 document.getElementById('nextBtn').classList.toggle('disabled', data.page >= totalPages);
 
-                if (data.results.length === 0) {
+                if (!data.results || data.results.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users found</td></tr>';
                     return;
                 }
@@ -161,8 +179,10 @@
                     `;
                 });
             } else {
-                if(json.code === 403) {
+                if(response.status === 403) {
                      document.querySelector('.card-body').innerHTML = '<div class="alert alert-warning">Access Denied: Admin role required.</div>';
+                } else {
+                     console.error('API Error:', json.message);
                 }
             }
         } catch (e) {
@@ -174,8 +194,11 @@
         if(!confirm('Are you sure?')) return;
         try {
             const response = await API.fetch(`/users/${id}`, { method: 'DELETE' });
-            if(response.ok) loadUsers();
-            else alert('Failed to delete');
+            if(response.ok) {
+                loadUsers();
+            } else {
+                alert('Failed to delete');
+            }
         } catch(e) { alert('Error'); }
     }
 

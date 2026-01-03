@@ -47,7 +47,7 @@
             const data = await response.json();
 
             if (response.ok) {
-                API.saveTokens(data.data.tokens);
+                API.saveTokens(data.tokens);
                 window.location.href = API.baseUrl + '/';
             } else {
                 alertBox.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;

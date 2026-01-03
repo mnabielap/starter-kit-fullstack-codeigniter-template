@@ -47,12 +47,22 @@
                 method: 'POST',
                 body: JSON.stringify(body)
             });
-            if (res.ok) window.location.href = API.baseUrl + '/users';
-            else {
-                const json = await res.json();
-                document.getElementById('msg').innerHTML = `<div class="text-danger">${json.message}</div>`;
+            const json = await res.json();
+
+            if (res.ok) {
+                window.location.href = API.baseUrl + '/users';
+            } else {
+                let errorMessage = json.message || 'Failed to create user';
+                if (json.errors) {
+                    errorMessage = typeof json.errors === 'object' 
+                        ? Object.values(json.errors).join('<br>') 
+                        : json.errors;
+                }
+                document.getElementById('msg').innerHTML = `<div class="text-danger">${errorMessage}</div>`;
             }
-        } catch(e) { alert('Error'); }
+        } catch(e) { 
+            document.getElementById('msg').innerHTML = `<div class="text-danger">Connection error</div>`;
+        }
     });
 </script>
 <?= $this->endSection() ?>

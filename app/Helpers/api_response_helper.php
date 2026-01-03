@@ -8,20 +8,18 @@ if (!function_exists('responseSuccess')) {
      * 
      * @param mixed $data The payload to return
      * @param int $statusCode HTTP Status code (default 200)
-     * @param string $message Optional message
+     * @param string $message Optional message (used if data is null)
      */
     function responseSuccess($data = null, int $statusCode = 200, string $message = 'Success'): ResponseInterface
     {
         $response = service('response');
         
-        $body = [
-            'code'    => $statusCode,
-            'message' => $message,
-        ];
-
-        if ($data !== null) {
-            $body['data'] = $data;
+        // 204 No Content should not have a body
+        if ($statusCode === 204) {
+            return $response->setStatusCode($statusCode);
         }
+
+        $body = $data ?? ['message' => $message];
 
         return $response->setJSON($body)->setStatusCode($statusCode);
     }
@@ -45,7 +43,7 @@ if (!function_exists('responseError')) {
         ];
 
         if ($errors !== null) {
-            $body['message'] = $errors; // Mapping errors to message to match legacy format if needed, or keep separate field
+            $body['errors'] = $errors;
         }
 
         return $response->setJSON($body)->setStatusCode($statusCode);

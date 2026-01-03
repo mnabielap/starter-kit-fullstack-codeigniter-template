@@ -130,11 +130,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code: { type: integer, example: 201 }
-                  message: { type: string, example: "Success" }
-                  data: { $ref: '#/components/schemas/AuthResponse' }
+                $ref: '#/components/schemas/AuthResponse'
         '400':
           description: Validation Error
 
@@ -163,11 +159,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code: { type: integer, example: 200 }
-                  message: { type: string, example: "Success" }
-                  data: { $ref: '#/components/schemas/AuthResponse' }
+                $ref: '#/components/schemas/AuthResponse'
         '401':
           description: Invalid Credentials
 
@@ -209,10 +201,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code: { type: integer, example: 200 }
-                  data: { $ref: '#/components/schemas/AuthTokens' }
+                $ref: '#/components/schemas/AuthTokens'
 
   /auth/forgot-password:
     post:
@@ -319,9 +308,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data: { $ref: '#/components/schemas/User' }
+                $ref: '#/components/schemas/User'
         '403':
           description: Forbidden (Requires Admin)
 
@@ -351,7 +338,14 @@ paths:
           name: search
           schema:
             type: string
-          description: Search by name (fuzzy)
+          description: Search term
+        - in: query
+          name: scope
+          schema:
+            type: string
+            enum: [all, name, email, id]
+            default: all
+          description: Scope of the search
         - in: query
           name: role
           schema:
@@ -366,17 +360,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      results:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/User'
-                      page: { type: integer }
-                      limit: { type: integer }
-                      totalPages: { type: integer }
-                      totalResults: { type: integer }
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  page: { type: integer }
+                  limit: { type: integer }
+                  totalPages: { type: integer }
+                  totalResults: { type: integer }
 
   /users/{userId}:
     get:
@@ -396,9 +387,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data: { $ref: '#/components/schemas/User' }
+                $ref: '#/components/schemas/User'
         '403':
           description: Forbidden (Can only access own data or be Admin)
         '404':
@@ -439,9 +428,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  data: { $ref: '#/components/schemas/User' }
+                $ref: '#/components/schemas/User'
         '403':
           description: Forbidden
 

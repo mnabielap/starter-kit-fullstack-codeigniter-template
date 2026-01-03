@@ -39,6 +39,9 @@ class Auth extends BaseController
 
         try {
             $body = $this->request->getJSON(true);
+            
+            $body['role'] = 'user';
+
             $user = $this->userService->createUser($body);
             $tokens = $this->tokenService->generateAuthTokens($user);
 

@@ -31,10 +31,15 @@
     const id = params.get('id');
 
     async function loadUser() {
+        if (!id) {
+            alert('No ID provided');
+            window.location.href = API.baseUrl + '/users';
+            return;
+        }
+
         const res = await API.fetch(`/users/${id}`);
         if(res.ok) {
-            const json = await res.json();
-            const u = json.data;
+            const u = await res.json();
             document.getElementById('userId').value = u.id;
             document.getElementById('name').value = u.name;
             document.getElementById('email').value = u.email;
@@ -53,15 +58,26 @@
         const pass = document.getElementById('password').value;
         if(pass) body.password = pass;
 
-        const res = await API.fetch(`/users/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(body)
-        });
-
-        if(res.ok) window.location.href = API.baseUrl + '/users';
-        else {
+        try {
+            const res = await API.fetch(`/users/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(body)
+            });
             const json = await res.json();
-            document.getElementById('msg').innerHTML = `<div class="text-danger">${json.message}</div>`;
+
+            if(res.ok) {
+                window.location.href = API.baseUrl + '/users';
+            } else {
+                let errorMessage = json.message || 'Update failed';
+                if (json.errors) {
+                    errorMessage = typeof json.errors === 'object' 
+                        ? Object.values(json.errors).join('<br>') 
+                        : json.errors;
+                }
+                document.getElementById('msg').innerHTML = `<div class="text-danger">${errorMessage}</div>`;
+            }
+        } catch(e) {
+            document.getElementById('msg').innerHTML = `<div class="text-danger">Connection error</div>`;
         }
     });
 

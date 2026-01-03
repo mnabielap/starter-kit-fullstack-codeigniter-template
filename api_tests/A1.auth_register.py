@@ -2,23 +2,33 @@ import sys
 import os
 import time
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-import utils
+from utils import send_and_print, BASE_URL, save_config
 
-# Prepare Payload
-# We use a timestamp to make the email unique so you can run this multiple times
+# Generate a unique email to avoid conflict
 unique_id = int(time.time())
+email = f"testuser_{unique_id}@example.com"
+
+print(f"--- REGISTERING NEW USER: {email} ---")
+
+url = f"{BASE_URL}/auth/register"
+
 payload = {
-    "name": f"Test User {unique_id}",
-    "email": f"newuser_{unique_id}@example.com",
-    "password": "password123" # Meets requirements (letters + numbers)
+    "name": "Test User Automator",
+    "email": email,
+    "password": "password123",
+    "role": "user",
 }
 
-# Send Request
-response = utils.send_and_print(
-    url=f"{utils.BASE_URL}/auth/register",
+response = send_and_print(
+    url=url,
     method="POST",
     body=payload,
     output_file=f"{os.path.splitext(os.path.basename(__file__))[0]}.json"
 )
 
-# We don't save tokens here, we rely on Login (A2) to set the main session
+# Optional: Save tokens if you want to use this user immediately
+if response.status_code == 201:
+    data = response.json()
+    save_config("accessToken", data['tokens']['access']['token'])
+    save_config("refreshToken", data['tokens']['refresh']['token'])
+    print(">>> Registration successful. Tokens saved to secrets.json.")
